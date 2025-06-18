@@ -6,4 +6,19 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi[standard]>=0.115.13",
+    "httpx>=0.28.1",
 ]
+
+[dependency-groups]
+dev = [
+    "ipython==9.2.0",
+    "mypy>=1.16.1",
+    "ruff>=0.12.0",
+]
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = ["D", "T201"]
