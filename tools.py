@@ -71,7 +71,7 @@ def how_much_carbon(target_item_id: int) -> float:
                 print()
 
             # Account for the number of items this blueprint produces
-            product_count = blueprint.get("product_count", 50)
+            product_count = blueprint.get("product_count", 1)
             carbon_per_product = total_carbon / product_count
 
             # Keep track of the highest cost blueprint
