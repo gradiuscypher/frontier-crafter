@@ -11,14 +11,14 @@ ccp_client = httpx.Client(base_url=CCP_BASE_URL)
 CARBON_ORE_ID = 77811
 
 
-def item_search(item_types: dict[int, dict], item_name: str) -> list[str]:
+def item_search(item_types: dict[int, dict], item_name: str) -> list[dict[str, str]]:
     """
     Search for an item by string in the item name.
     """
     results = []
     for item_id, item in item_types.items():
         if item_name.lower() in item["name"].lower():
-            results.append(f"{item['name']} ({item_id})")
+            results.append({"name": item["name"], "id": item_id})
     return results
 
 
@@ -28,7 +28,7 @@ def how_much_carbon(target_item_id: int) -> float:
     This function handles multiple blueprints, recursive materials, and uses memoization
     """
     # Load crafting data once
-    crafting = create_crafting_json("blueprint.db", "structure_names.json", "item_types.json")
+    crafting, _ = create_crafting_json("blueprint.db", "structure_names.json", "item_types.json")
 
     # Cache to store results and avoid recalculation
     cache: dict[int, float] = {}
@@ -166,7 +166,7 @@ def create_structure_lookup(
 
 def create_crafting_json(
     db_filename: str, structure_names_filename: str, item_types_filename: str,
-) -> dict[int, list[dict]]:
+) -> tuple[dict[int, list[dict]], dict[int, dict]]:
     """
     Combine the recipe database with the item types to create a crafting JSON file.
     """
@@ -209,7 +209,7 @@ def create_crafting_json(
                     },
                 )
 
-    return product_lookup
+    return product_lookup, item_types
 
 
 if __name__ == "__main__":

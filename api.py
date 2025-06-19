@@ -1,10 +1,12 @@
+from typing import Any
+
 from fastapi import FastAPI, HTTPException
 
 from models import FrontierBlueprint
-from tools import create_crafting_json
+from tools import create_crafting_json, item_search
 
 app = FastAPI()
-blueprints = create_crafting_json("blueprint.db", "typelistSelection.json", "typelist.json")
+blueprints, item_types = create_crafting_json("blueprint.db", "typelistSelection.json", "typelist.json")
 
 
 @app.get("/items/{item_id}")
@@ -19,9 +21,8 @@ def get_item(item_id: int) -> list[FrontierBlueprint]:
 
 
 @app.get("/search/{item_name}")
-def search_item(item_name: str) -> list[str]:
+def search_item(item_name: str) -> list[dict[str, Any]]:
     """
     Search for partial matches of item name and return a dict of item_id to item_name
     """
-    matches: list[str] = []
-    return matches
+    return item_search(item_types, item_name)
