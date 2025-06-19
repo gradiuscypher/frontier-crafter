@@ -17,11 +17,12 @@ Using CCPs types API - https://docs.evefrontier.com/SwaggerWorldApi
 
 # TODO
 ## Now
-- Organize project TODO
 - Crafting planner
+  - Need to be able to manually set available ingredents as well
 
 ## Next Up
 - Group crafting
+- Organize project TODO
 
 ## Backlog
 - Use SmartCharacters to track overall progress or available resources
