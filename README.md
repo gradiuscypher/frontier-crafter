@@ -17,11 +17,11 @@ Using CCPs types API - https://docs.evefrontier.com/SwaggerWorldApi
 
 # TODO
 ## Now
-- Make the crafting ingredients clickable as well
 - Organize project TODO
+- Crafting planner
 
 ## Next Up
-- Group Crafting/Crafting Planner
+- Group crafting
 
 ## Backlog
 - Use SmartCharacters to track overall progress or available resources
