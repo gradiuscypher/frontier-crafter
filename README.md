@@ -2,14 +2,6 @@
 App to help keep track of the things you want to make in EVE Frontier
 
 # High level ideas
-- Allow player to track crafting recipes and what raw mats are needed
-- Add more than one BP to track all mats
-- Autocomplete API so it's easy to search for item names
-- Track how many trips something will be based on cargo hold and mass of items
-- Collaboration tooling
-  - Track requests
-  - Track resources that a user puts in
-  - Track progress
 
 
 # Notes
@@ -21,3 +13,22 @@ It can be found in the game's static data.
 
 ## Where can I find the item types and human-readable names?
 Using CCPs types API - https://docs.evefrontier.com/SwaggerWorldApi
+
+
+# TODO
+## Now
+- Make the crafting ingredients clickable as well
+- Organize project TODO
+
+## Next Up
+- Group Crafting/Crafting Planner
+
+## Backlog
+- Allow player to track crafting recipes and what raw mats are needed
+- Add more than one BP to track all mats
+- Autocomplete API so it's easy to search for item names
+- Track how many trips something will be based on cargo hold and mass of items
+- Collaboration tooling
+  - Track requests
+  - Track resources that a user puts in
+  - Track progress
