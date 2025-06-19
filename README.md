@@ -24,6 +24,7 @@ Using CCPs types API - https://docs.evefrontier.com/SwaggerWorldApi
 - Group Crafting/Crafting Planner
 
 ## Backlog
+- Use SmartCharacters to track overall progress or available resources
 - Allow player to track crafting recipes and what raw mats are needed
 - Add more than one BP to track all mats
 - Autocomplete API so it's easy to search for item names
@@ -32,3 +33,4 @@ Using CCPs types API - https://docs.evefrontier.com/SwaggerWorldApi
   - Track requests
   - Track resources that a user puts in
   - Track progress
+- Player requests that can notify on discord?

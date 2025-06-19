@@ -15,10 +15,44 @@ const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#1976d2',
+      main: '#616161', // Medium grey
+      light: '#8e8e8e',
+      dark: '#373737',
+      contrastText: '#ffffff',
     },
     secondary: {
-      main: '#dc004e',
+      main: '#424242', // Dark grey
+      light: '#6d6d6d',
+      dark: '#1b1b1b',
+      contrastText: '#ffffff',
+    },
+    background: {
+      default: '#fafafa',
+      paper: '#ffffff',
+    },
+    text: {
+      primary: '#212121',
+      secondary: '#757575',
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none', // Remove uppercase transformation
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#e0e0e0',
+          color: '#424242',
+          '&.MuiChip-outlined': {
+            borderColor: '#bdbdbd',
+          },
+        },
+      },
     },
   },
 });

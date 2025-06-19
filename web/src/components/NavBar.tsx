@@ -98,6 +98,8 @@ const NavBar: React.FC = () => {
             options={searchResults}
             getOptionLabel={(option) => option.name}
             loading={loading}
+            inputValue={searchQuery}
+            value={null}
             onInputChange={(event, newInputValue) => {
               setSearchQuery(newInputValue);
             }}

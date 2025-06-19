@@ -24,7 +24,8 @@ import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturi
 
 interface Material {
   quantity: number;
-  type_id: number;
+  type_id?: number;
+  typeID?: number;  // Fallback for raw API data
   name: string;
 }
 
@@ -192,15 +193,40 @@ const ItemDetails: React.FC = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {blueprint.materials.map((material, idx) => (
-                    <TableRow key={idx} hover>
-                      <TableCell>{material.name}</TableCell>
-                      <TableCell align="right">
-                        {material.quantity.toLocaleString()}
-                      </TableCell>
-                      <TableCell align="right">{material.type_id}</TableCell>
-                    </TableRow>
-                  ))}
+                  {blueprint.materials.map((material, idx) => {
+                    console.log('Material:', material); // Debug log
+                    return (
+                      <TableRow key={idx} hover>
+                        <TableCell>
+                          <Button
+                            variant="text"
+                            sx={{
+                              textTransform: 'none',
+                              p: 0,
+                              minWidth: 'auto',
+                              justifyContent: 'flex-start',
+                              color: 'primary.main',
+                              '&:hover': {
+                                backgroundColor: 'transparent',
+                                textDecoration: 'underline',
+                              },
+                            }}
+                            onClick={() => {
+                              console.log('Clicking material:', material);
+                              const materialId = material.type_id || material.typeID;
+                              navigate(`/item/${materialId}`);
+                            }}
+                          >
+                            {material.name}
+                          </Button>
+                        </TableCell>
+                        <TableCell align="right">
+                          {material.quantity.toLocaleString()}
+                        </TableCell>
+                        <TableCell align="right">{material.type_id || material.typeID}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableContainer>
