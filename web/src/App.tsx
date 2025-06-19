@@ -1,36 +1,46 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import Button from '@mui/material/Button';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import Container from '@mui/material/Container';
+import NavBar from './components/NavBar';
+import HomePage from './pages/HomePage';
+import CraftingPlanner from './pages/CraftingPlanner';
+import GroupCrafting from './pages/GroupCrafting';
+import Help from './pages/Help';
+import ItemDetails from './pages/ItemDetails';
+import './App.css';
+
+const theme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: {
+      main: '#1976d2',
+    },
+    secondary: {
+      main: '#dc004e',
+    },
+  },
+});
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <Button variant="contained" onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </Button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Router>
+        <NavBar />
+        <Container maxWidth="lg" sx={{ mt: 2 }}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/crafting-planner" element={<CraftingPlanner />} />
+            <Route path="/group-crafting" element={<GroupCrafting />} />
+            <Route path="/help" element={<Help />} />
+            <Route path="/item/:itemId" element={<ItemDetails />} />
+          </Routes>
+        </Container>
+      </Router>
+    </ThemeProvider>
+  );
 }
 
-export default App
+export default App;

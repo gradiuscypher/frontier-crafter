@@ -1,11 +1,25 @@
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from models import FrontierBlueprint
 from tools import create_crafting_json, item_search
 
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",  # React dev server
+        "http://127.0.0.1:5173",  # Alternative localhost
+        "http://localhost:3000",  # Common React port
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["*"],
+)
 blueprints, item_types = create_crafting_json("blueprint.db", "typelistSelection.json", "typelist.json")
 
 
