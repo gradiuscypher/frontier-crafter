@@ -2,6 +2,7 @@
 
 import json
 import sqlite3
+from pathlib import Path
 
 import httpx
 
@@ -27,7 +28,7 @@ def how_much_carbon(target_item_id: int) -> float:
     This function handles multiple blueprints, recursive materials, and uses memoization
     """
     # Load crafting data once
-    crafting = create_crafting_json("blueprint.db")
+    crafting = create_crafting_json("blueprint.db", "structure_names.json", "item_types.json")
 
     # Cache to store results and avoid recalculation
     cache: dict[int, float] = {}
@@ -137,12 +138,41 @@ def recipe_db_to_json(db_filename: str) -> list[dict]:
         return []
 
 
-def create_crafting_json(db_filename: str) -> dict[int, list[dict]]:
+def create_structure_lookup(
+    item_types_filename: str, structure_names_filename: str,
+) -> dict[int, list[str]]:
+    """
+    Create a lookup of recipe IDs to their structure IDs.
+    TODO: include the process for getting the JSON data from gamefiles
+    """
+    structures = {}
+
+    with Path(item_types_filename).open() as f:
+        item_types = json.load(f)
+    with Path(structure_names_filename).open() as f:
+        structure_names = json.load(f)
+
+    for structure_id, structure in item_types.items():
+        for item_id in structure["includedTypeIDs"]:
+            if item_id not in structures:
+                structures[item_id] = [
+                    structure_names[structure_id]["name"],
+                ]
+            else:
+                structures[item_id].append(structure_names[structure_id]["name"])
+
+    return structures
+
+
+def create_crafting_json(
+    db_filename: str, structure_names_filename: str, item_types_filename: str,
+) -> dict[int, list[dict]]:
     """
     Combine the recipe database with the item types to create a crafting JSON file.
     """
     item_types = fetch_all_types()
     bps = recipe_db_to_json(db_filename)
+    structure_lookup = create_structure_lookup(item_types_filename, structure_names_filename)
     product_lookup: dict[int, list[dict]] = {}
 
     for bp in bps:
@@ -170,6 +200,7 @@ def create_crafting_json(db_filename: str) -> dict[int, list[dict]]:
                 product_lookup[product_id].append(
                     {
                         "bp_id": bp_id,
+                        "structures": structure_lookup.get(bp_id, []),
                         "materials": materials,
                         "time": time,
                         "max_production": max_production,

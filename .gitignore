@@ -1,5 +1,7 @@
 # gradius ignores
 *.db
+typelist.json
+typelistSelection.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
