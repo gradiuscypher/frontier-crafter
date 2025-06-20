@@ -1,12 +1,28 @@
-from typing import Any
+import uuid
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+from typing import Annotated, Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sqlmodel import Session
 
 from models import FrontierBlueprint
+from schema import CraftingSession, CraftingTarget, create_db_and_tables, get_session
 from tools import create_crafting_json, item_search
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    # Startup
+    create_db_and_tables()
+    yield
+    # Shutdown (if needed)
+
+
+app = FastAPI(lifespan=lifespan)
+SessionDep = Annotated[Session, Depends(get_session)]
+
 
 # Add CORS middleware
 app.add_middleware(
@@ -40,3 +56,24 @@ def search_item(item_name: str) -> list[dict[str, Any]]:
     Search for partial matches of item name and return a dict of item_id to item_name
     """
     return item_search(item_types, item_name)
+
+
+@app.post("/crafting-session")
+def create_crafting_session() -> uuid.UUID:
+    return CraftingSession.create_session(crafting_targets=[])
+
+
+@app.get("/crafting-session/{session_uuid}")
+def get_crafting_session(session_uuid: uuid.UUID) -> dict[str, Any]:
+    target_session = CraftingSession.get_session(session_uuid)
+    if target_session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return target_session.model_dump()
+
+
+@app.post("/crafting-session/{session_uuid}/target")
+def add_target(session_uuid: uuid.UUID, crafting_target: CraftingTarget) -> dict[str, Any]:
+    result = CraftingSession.add_target(session_uuid, crafting_target)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return result.model_dump()
