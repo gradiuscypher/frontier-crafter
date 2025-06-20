@@ -11,6 +11,9 @@ import schema
 from api import app
 from schema import get_session
 
+TARGET_ITEM_ID = 88561
+TARGET_BLUEPRINT_ID = 88611
+
 
 @pytest.fixture(name="session")
 def session_fixture() -> Generator[Session, None, None]:
@@ -53,25 +56,46 @@ def test_get_session(client: TestClient) -> None:
     assert response.json()["session_uuid"] == session_id
 
 
-def test_add_target(client: TestClient) -> None:
-    response = client.post("/crafting-session")
-    assert response.status_code == HTTPStatus.OK
-    session_id = response.json()
-
-    response = client.post(f"/crafting-session/{session_id}/target", json={"item_id": 1, "needed_quantity": 10, "blueprint_id": 1})
-    assert response.status_code == HTTPStatus.OK
-    assert response.json()["session_uuid"] == session_id
-
-
 def test_get_targets(client: TestClient) -> None:
     response = client.post("/crafting-session")
     assert response.status_code == HTTPStatus.OK
     session_id = response.json()
 
-    response = client.post(f"/crafting-session/{session_id}/target", json={"item_id": 1, "needed_quantity": 10, "blueprint_id": 1})
+    response = client.post(f"/crafting-session/{session_id}/target", json={"item_id": TARGET_ITEM_ID, "needed_quantity": 10, "blueprint_id": TARGET_BLUEPRINT_ID})
     assert response.status_code == HTTPStatus.OK
     assert response.json()["session_uuid"] == session_id
 
     response = client.get(f"/crafting-session/{session_id}/targets")
     assert response.status_code == HTTPStatus.OK
-    assert response.json() == [{"item_id": 1, "needed_quantity": 10, "blueprint_id": 1, "crafted_quantity": 0, "session_id": 1, "id": 1}]
+    assert response.json() == [{"item_id": TARGET_ITEM_ID, "needed_quantity": 10, "blueprint_id": TARGET_BLUEPRINT_ID, "crafted_quantity": 0, "session_id": 1, "id": 1}]
+
+
+def test_get_target_ingredients(client: TestClient) -> None:
+    response = client.post("/crafting-session")
+    assert response.status_code == HTTPStatus.OK
+    session_id = response.json()
+
+    response = client.post(f"/crafting-session/{session_id}/target", json={"item_id": TARGET_ITEM_ID, "needed_quantity": 10, "blueprint_id": TARGET_BLUEPRINT_ID})
+    assert response.status_code == HTTPStatus.OK
+    assert response.json()["session_uuid"] == session_id
+
+    response = client.get(f"/crafting-session/{session_id}/target/{TARGET_ITEM_ID}/ingredients")
+    assert response.status_code == HTTPStatus.OK
+
+
+def test_modify_ingredient_quantity(client: TestClient) -> None:
+    response = client.post("/crafting-session")
+    assert response.status_code == HTTPStatus.OK
+    session_id = response.json()
+
+    response = client.post(f"/crafting-session/{session_id}/target", json={"item_id": TARGET_ITEM_ID, "needed_quantity": 10, "blueprint_id": TARGET_BLUEPRINT_ID})
+    assert response.status_code == HTTPStatus.OK
+    assert response.json()["session_uuid"] == session_id
+
+    response = client.post(f"/crafting-session/{session_id}/target/{TARGET_ITEM_ID}/ingredient/77811/100")
+    assert response.status_code == HTTPStatus.OK
+    assert response.json()["session_uuid"] == session_id
+
+    response = client.get(f"/crafting-session/{session_id}/target/{TARGET_ITEM_ID}/ingredients")
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == [{"item_id": 77811, "needed_quantity": 728, "crafted_quantity": 100, "id": 1, "target_id": 1}]

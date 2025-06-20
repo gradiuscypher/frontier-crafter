@@ -36,6 +36,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
+
 blueprints, item_types = create_crafting_json("blueprint.db", "typelistSelection.json", "typelist.json")
 
 
@@ -79,9 +80,25 @@ def add_target(session_uuid: uuid.UUID, crafting_target: CraftingTarget) -> dict
     return result.model_dump()
 
 
+@app.post("/crafting-session/{session_uuid}/target/{target_id}/ingredient/{ingredient_id}/{quantity}")
+def modify_ingredient_quantity(session_uuid: uuid.UUID, target_id: int, ingredient_id: int, quantity: int) -> dict[str, Any]:
+    result = CraftingSession.modify_ingredent_quantity(session_uuid, target_id, ingredient_id, quantity)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return result.model_dump()
+
+
 @app.get("/crafting-session/{session_uuid}/targets")
 def get_targets(session_uuid: uuid.UUID) -> list[dict[str, Any]]:
     session = CraftingSession.get_session(session_uuid)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
     return [target.model_dump() for target in session.crafting_targets]
+
+
+@app.get("/crafting-session/{session_uuid}/target/{target_item_id}/ingredients")
+def get_target_ingredients(session_uuid: uuid.UUID, target_item_id: int) -> list[dict[str, Any]]:
+    ingredients = CraftingSession.get_target_ingredients(session_uuid, target_item_id)
+    if ingredients is None:
+        raise HTTPException(status_code=404, detail="Ingredients not found")
+    return [ingredient.model_dump() for ingredient in ingredients]
