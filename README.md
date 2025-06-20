@@ -18,14 +18,18 @@ Using CCPs types API - https://docs.evefrontier.com/SwaggerWorldApi
 # TODO
 ## Now
 - Crafting planner
+  - Delete target items from the session and remove ingredients (ui/api)
   - Need to be able to manually set available ingredents as well
-  - Need to set up DB connection
 
 ## Next Up
-- Group crafting
+- Tracking progress with SmartCharacters
 - Organize project TODO
 
 ## Backlog
+- Progress bars and more displays?
+- Metrics tracking?
+- Better backend logging
+- Group crafting
 - Use SmartCharacters to track overall progress or available resources
 - Allow player to track crafting recipes and what raw mats are needed
 - Add more than one BP to track all mats
