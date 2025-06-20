@@ -29,6 +29,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  CircularProgress,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -56,6 +57,14 @@ interface CraftingTarget {
 interface SearchResult {
   id: number;
   name: string;
+}
+
+interface CraftingIngredient {
+  id: number;
+  item_id: number;
+  needed_quantity: number;
+  crafted_quantity: number;
+  target_id: number;
 }
 
 interface Blueprint {
@@ -100,9 +109,16 @@ const CraftingPlanner: React.FC = () => {
 
   // New states for item names and bill of materials
   const [itemNames, setItemNames] = useState<Record<number, string>>({});
-  const [billOfMaterials, setBillOfMaterials] = useState<Record<number, { name: string; quantity: number }>>({});
+  const [billOfMaterials, setBillOfMaterials] = useState<Record<number, { name: string; quantity: number; owned: number }>>({});
   const [loadingBillOfMaterials, setLoadingBillOfMaterials] = useState(false);
-  const [ownedMaterials, setOwnedMaterials] = useState<Record<number, number>>({});
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [savingMaterials, setSavingMaterials] = useState(false);
+  const [ingredientsByTarget, setIngredientsByTarget] = useState<Record<number, CraftingIngredient[]>>({});
+
+  // Reset unsaved changes when session changes
+  useEffect(() => {
+    setHasUnsavedChanges(false);
+  }, [currentSessionId]);
 
   // Load sessions from localStorage on component mount
   useEffect(() => {
@@ -212,22 +228,36 @@ const CraftingPlanner: React.FC = () => {
   };
 
   const fetchSessionTargets = async (sessionId: string) => {
+    console.log('Fetching session targets for session:', sessionId);
     setLoadingTargets(true);
     try {
       const response = await fetch(`${API_BASE_URL}/crafting-session/${sessionId}/targets`);
       if (response.ok) {
         const targets = await response.json();
+        console.log('Fetched targets:', targets);
         setSessionTargets(targets);
-        // Fetch item names and calculate bill of materials
-        await fetchItemNamesForTargets(targets);
-        await calculateBillOfMaterials(targets);
+        
+        if (targets.length > 0) {
+          // Fetch item names and calculate bill of materials
+          await fetchItemNamesForTargets(targets);
+          await calculateBillOfMaterials(targets, sessionId);
+        } else {
+          // No targets, clear the BOM
+          console.log('No targets found, clearing BOM');
+          setBillOfMaterials({});
+          setIngredientsByTarget({});
+        }
       } else {
         console.error('Failed to fetch session targets');
         setSessionTargets([]);
+        setBillOfMaterials({});
+        setIngredientsByTarget({});
       }
     } catch (error) {
       console.error('Error fetching session targets:', error);
       setSessionTargets([]);
+      setBillOfMaterials({});
+      setIngredientsByTarget({});
     } finally {
       setLoadingTargets(false);
     }
@@ -257,40 +287,56 @@ const CraftingPlanner: React.FC = () => {
     setItemNames(nameMap);
   };
 
-  const calculateBillOfMaterials = async (targets: CraftingTarget[]) => {
+  const calculateBillOfMaterials = async (targets: CraftingTarget[], sessionId: string) => {
+    console.log('Calculating BOM for targets:', targets, 'session:', sessionId);
     setLoadingBillOfMaterials(true);
-    const materialTotals: Record<number, { name: string; quantity: number }> = {};
+    const materialTotals: Record<number, { name: string; quantity: number; owned: number }> = {};
+    const ingredientsData: Record<number, CraftingIngredient[]> = {};
     
     try {
       for (const target of targets) {
-        // Fetch blueprint details for this target
-        const response = await fetch(`${API_BASE_URL}/items/${target.item_id}`);
-        if (response.ok) {
-          const blueprints: Blueprint[] = await response.json();
-          const blueprint = blueprints.find(bp => bp.bp_id === target.blueprint_id);
+        // Fetch ingredients for this target (includes owned quantities as crafted_quantity)
+        const ingredientsResponse = await fetch(`${API_BASE_URL}/crafting-session/${sessionId}/target/${target.item_id}/ingredients`);
+        if (ingredientsResponse.ok) {
+          const ingredients: CraftingIngredient[] = await ingredientsResponse.json();
+          ingredientsData[target.item_id] = ingredients;
           
-          if (blueprint) {
-            // Calculate how many runs needed
-            const runsNeeded = Math.ceil(target.needed_quantity / blueprint.product_count);
+          // Fetch blueprint to calculate total needed
+          const blueprintResponse = await fetch(`${API_BASE_URL}/items/${target.item_id}`);
+          if (blueprintResponse.ok) {
+            const blueprints: Blueprint[] = await blueprintResponse.json();
+            const blueprint = blueprints.find(bp => bp.bp_id === target.blueprint_id);
             
-            // Add materials to totals
-            for (const material of blueprint.materials) {
-              const totalNeeded = material.quantity * runsNeeded;
+            if (blueprint) {
+              const runsNeeded = Math.ceil(target.needed_quantity / blueprint.product_count);
               
-              if (materialTotals[material.typeID]) {
-                materialTotals[material.typeID].quantity += totalNeeded;
-              } else {
-                materialTotals[material.typeID] = {
-                  name: material.name,
-                  quantity: totalNeeded
-                };
+              // Match ingredients from API with blueprint materials
+              for (const ingredient of ingredients) {
+                const totalNeeded = ingredient.needed_quantity * runsNeeded;
+                const owned = ingredient.crafted_quantity; // Using crafted_quantity as owned quantity
+                
+                if (materialTotals[ingredient.item_id]) {
+                  materialTotals[ingredient.item_id].quantity += totalNeeded;
+                  materialTotals[ingredient.item_id].owned += owned;
+                } else {
+                  // Find the material name from blueprint
+                  const blueprintMaterial = blueprint.materials.find(m => m.typeID === ingredient.item_id);
+                  materialTotals[ingredient.item_id] = {
+                    name: blueprintMaterial?.name || `Material ${ingredient.item_id}`,
+                    quantity: totalNeeded,
+                    owned: owned
+                  };
+                }
               }
             }
           }
         }
       }
       
+      setIngredientsByTarget(ingredientsData);
       setBillOfMaterials(materialTotals);
+      console.log('BOM calculation complete. Material totals:', materialTotals);
+      console.log('Ingredients data:', ingredientsData);
     } catch (error) {
       console.error('Error calculating bill of materials:', error);
     } finally {
@@ -573,6 +619,59 @@ const CraftingPlanner: React.FC = () => {
     }
   };
 
+  const saveOwnedMaterials = async () => {
+    if (!currentSessionId) return;
+
+    setSavingMaterials(true);
+    try {
+      // Update each ingredient's crafted_quantity (which represents owned quantity)
+      for (const [targetId, ingredients] of Object.entries(ingredientsByTarget)) {
+        for (const ingredient of ingredients) {
+          const materialId = ingredient.item_id;
+          const currentOwned = ingredient.crafted_quantity;
+          const newOwned = billOfMaterials[materialId]?.owned || 0;
+          
+          if (currentOwned !== newOwned) {
+            // Calculate the difference to send to the API
+            const quantityChange = newOwned - currentOwned;
+            
+            if (quantityChange !== 0) {
+              const response = await fetch(
+                `${API_BASE_URL}/crafting-session/${currentSessionId}/target/${targetId}/ingredient/${materialId}/${quantityChange}`,
+                { method: 'POST' }
+              );
+              
+              if (!response.ok) {
+                throw new Error(`Failed to update ingredient ${materialId} for target ${targetId}`);
+              }
+            }
+          }
+        }
+      }
+
+      setHasUnsavedChanges(false);
+      setSnackbar({
+        open: true,
+        message: 'Material inventory saved successfully!',
+        severity: 'success'
+      });
+      
+      // Refresh the data to get the updated ingredient quantities
+      if (currentSessionId) {
+        await fetchSessionTargets(currentSessionId);
+      }
+    } catch (error) {
+      console.error('Error saving owned materials:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to save material inventory',
+        severity: 'error'
+      });
+    } finally {
+      setSavingMaterials(false);
+    }
+  };
+
   const currentSession = sessions.find(session => session.id === currentSessionId);
 
   return (
@@ -744,9 +843,34 @@ const CraftingPlanner: React.FC = () => {
           {/* Bill of Materials Section */}
           {sessionTargets.length > 0 && (
             <Paper sx={{ p: 3, mb: 3 }}>
-              <Typography variant="h5" component="h2" gutterBottom>
-                Total Bill of Materials
-              </Typography>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h5" component="h2">
+                  Total Bill of Materials
+                </Typography>
+                
+                {hasUnsavedChanges && (
+                  <Button
+                    variant="contained"
+                    onClick={saveOwnedMaterials}
+                    disabled={savingMaterials}
+                    startIcon={savingMaterials ? <CircularProgress size={16} /> : undefined}
+                    sx={{
+                      backgroundColor: '#546e7a',
+                      color: 'white',
+                      fontWeight: 600,
+                      '&:hover': {
+                        backgroundColor: '#37474f',
+                      },
+                      '&:disabled': {
+                        backgroundColor: '#90a4ae',
+                        color: 'rgba(255, 255, 255, 0.7)',
+                      },
+                    }}
+                  >
+                    {savingMaterials ? 'Saving...' : 'Save Inventory'}
+                  </Button>
+                )}
+              </Box>
               
               {loadingBillOfMaterials ? (
                 <Typography variant="body1" color="text.secondary" textAlign="center" py={4}>
@@ -776,8 +900,7 @@ const CraftingPlanner: React.FC = () => {
                         {Object.entries(billOfMaterials)
                           .sort(([, a], [, b]) => b.quantity - a.quantity) // Sort by quantity descending
                           .map(([materialId, material]) => {
-                            const owned = ownedMaterials[parseInt(materialId)] || 0;
-                            const stillNeed = Math.max(0, material.quantity - owned);
+                            const stillNeed = Math.max(0, material.quantity - material.owned);
                             
                             return (
                               <TableRow key={materialId} hover>
@@ -800,13 +923,17 @@ const CraftingPlanner: React.FC = () => {
                                   <TextField
                                     size="small"
                                     type="number"
-                                    value={owned}
+                                    value={material.owned}
                                     onChange={(e) => {
                                       const value = Math.max(0, parseInt(e.target.value) || 0);
-                                      setOwnedMaterials(prev => ({
+                                      setBillOfMaterials(prev => ({
                                         ...prev,
-                                        [parseInt(materialId)]: value
+                                        [parseInt(materialId)]: {
+                                          ...material,
+                                          owned: value
+                                        }
                                       }));
+                                      setHasUnsavedChanges(true);
                                     }}
                                     inputProps={{ 
                                       min: 0,
@@ -836,6 +963,11 @@ const CraftingPlanner: React.FC = () => {
                       <strong>Tip:</strong> Enter the quantities you already have in the "You Have" column 
                       to see what materials you still need to collect. Materials you still need are shown in red, 
                       while materials you have enough of are shown in green.
+                      {hasUnsavedChanges && (
+                        <span style={{ color: 'orange' }}>
+                          {' '}Don't forget to save your inventory changes!
+                        </span>
+                      )}
                     </Typography>
                   </Alert>
                 </>
