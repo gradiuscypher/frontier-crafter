@@ -77,8 +77,8 @@ class CraftingTarget(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
     item_id: int
     needed_quantity: int
+    blueprint_id: int
     crafted_quantity: int = 0
-    blueprint_id: int = 0  # Add default value
     crafting_session: CraftingSession = Relationship(back_populates="crafting_targets")
     session_id: int = Field(foreign_key="craftingsession.id")
     ingredients: list["CraftingIngredient"] = Relationship(back_populates="crafting_target")

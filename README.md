@@ -19,6 +19,7 @@ Using CCPs types API - https://docs.evefrontier.com/SwaggerWorldApi
 ## Now
 - Crafting planner
   - Need to be able to manually set available ingredents as well
+  - Need to set up DB connection
 
 ## Next Up
 - Group crafting

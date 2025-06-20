@@ -77,3 +77,11 @@ def add_target(session_uuid: uuid.UUID, crafting_target: CraftingTarget) -> dict
     if result is None:
         raise HTTPException(status_code=404, detail="Session not found")
     return result.model_dump()
+
+
+@app.get("/crafting-session/{session_uuid}/targets")
+def get_targets(session_uuid: uuid.UUID) -> list[dict[str, Any]]:
+    session = CraftingSession.get_session(session_uuid)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return [target.model_dump() for target in session.crafting_targets]
