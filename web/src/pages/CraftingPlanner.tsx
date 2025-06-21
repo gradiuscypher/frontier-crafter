@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Typography,
   Box,
@@ -30,6 +30,7 @@ import {
   TableHead,
   TableRow,
   CircularProgress,
+  Tooltip,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -81,6 +82,7 @@ const API_BASE_URL = 'http://localhost:8000';
 
 const CraftingPlanner: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   
   const [sessions, setSessions] = useState<CraftingSessionInfo[]>([]);
   const [hasLoadedFromStorage, setHasLoadedFromStorage] = useState(false);
@@ -906,10 +908,28 @@ const CraftingPlanner: React.FC = () => {
                               <TableRow key={materialId} hover>
                                 <TableCell>
                                   <Box>
-                                    <Typography variant="body2">
-                                      {material.name}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
+                                    <Tooltip title="Click to view crafting details" arrow>
+                                      <Button
+                                        variant="text"
+                                        sx={{
+                                          textTransform: 'none',
+                                          p: 0,
+                                          minWidth: 'auto',
+                                          justifyContent: 'flex-start',
+                                          color: 'primary.main',
+                                          fontSize: 'body2.fontSize',
+                                          fontWeight: 'body2.fontWeight',
+                                          '&:hover': {
+                                            backgroundColor: 'transparent',
+                                            textDecoration: 'underline',
+                                          },
+                                        }}
+                                        onClick={() => navigate(`/item/${materialId}`)}
+                                      >
+                                        {material.name}
+                                      </Button>
+                                    </Tooltip>
+                                    <Typography variant="caption" color="text.secondary" display="block">
                                       ID: {materialId}
                                     </Typography>
                                   </Box>
